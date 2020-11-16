@@ -8,22 +8,68 @@
     <ModelButton />
     <!-- Emits选项 -->
     <Emits @my-click="onClick" />
+    <!-- 实例方法定义组件 -->
+    <comp></comp>
+    <!-- v-model使用 -->
+    <VmodelTest v-model:num="num"></VmodelTest>
+    <!-- 渲染函数 -->
+    <RenderTest v-model:num="num">
+      <template v-slot:default>默认插槽</template>
+      <template v-slot:num>具名插槽</template>
+    </RenderTest>
   </div>
 </template>
 <script>
-import { computed, reactive, onMounted, onUnmounted, ref, toRefs, watch } from 'vue'
+import { computed, reactive, onMounted, onUnmounted, ref, toRefs, watch, h } from 'vue'
 import { useCounter } from '../utils/useCounter'
 import ModelButton from './ModelButton.vue'
 import Emits from './Emits.vue'
+import VmodelTest from './VmodelTest.vue'
 export default {
   name: 'HelloWorld',
   components: {
     ModelButton,
-    Emits
+    Emits,
+    VmodelTest,
+    RenderTest: {
+      props: {
+        num: {
+          type: Number,
+          default: 0
+        }
+      },
+      render() {
+        // 默认插槽
+        this.$slots.default()
+        // 具名插槽
+        this.$slots.num()
+        const num = this.num
+        const emit = this.$emit
+        console.log(this);
+        return h('div', [
+          h('div', {
+            onClick: this.onClick
+          }, `I am RenderTest: ${num}`, [
+            this.$slots.default(),
+            this.$slots.num()
+          ])
+        ])
+      },
+      methods: {
+        onClick() {
+          this.$emit('update:num', this.num + 1)
+        }
+      }
+    }
   },
   methods: {
     onClick() {
       console.log('Emits');
+    }
+  },
+  data() {
+    return {
+      num: 9
     }
   },
   setup() {
