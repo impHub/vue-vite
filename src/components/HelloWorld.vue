@@ -17,6 +17,8 @@
       <template v-slot:default>默认插槽</template>
       <template v-slot:num>具名插槽</template>
     </RenderTest>
+    <!-- 自定义指令 -->
+    <p v-color="'blue'">color</p>
   </div>
 </template>
 <script>

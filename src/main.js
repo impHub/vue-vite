@@ -8,7 +8,11 @@ createApp(App)
             return h('div', 'I am comp')
         }
     })
+    .directive('color', (el, dom) => {
+        el.style.backgroundColor = dom.value
+    })
     .mount('#app')
+    
 // 自定义渲染器
 // const nodeOps = {
 //     // 处理元素的创建
