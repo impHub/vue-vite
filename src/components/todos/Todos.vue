@@ -1,45 +1,35 @@
 <template>
   <div>
     <!-- 新增todo -->
-    <input
-      type="text"
-      v-model="newTodo"
+    <EditTodo
+      v-model:todoTitle="newTodo"
       @keyup.enter="addTodo"
       autofocus
       placeholder="今日待办"
       autocomplete="off"
-    >
+    ></EditTodo>
     <!-- todo列表 -->
     <ul>
-      <li
+      <todo-item
         v-for="todo in filterTodos"
         :key="todo.id"
-        :class="{completed:todo.completed, editing: todo === editedTodo}"
+        :todo="todo"
+        v-model:edited-todo="editedTodo"
+        @removeTodo="removeTodo"
       >
-        <!-- 绑定完成状态 -->
-        <div class="view">
-          <input
-            type="checkbox"
-            v-model="todo.completed"
-          >
-          <label @dblclick="editTodo(todo)">{{todo.title}}</label>
-          <button @click="removeTodo(todo)">X</button>
-        </div>
-        <!-- 编辑待办 -->
-        <input
-          type="text"
-          class="edit"
-          v-todo-focus="todo === editedTodo"
-          v-model="todo.title"
-          @blur="doneEdit(todo)"
-          @keyup.enter="doneEdit(todo)"
-          @keyup.escape="cancelEdit(todo)"
-        />
-      </li>
+
     </ul>
     <!-- 过滤 -->
     <p class="filters">
       <span
+        v-for="(item, index) in filtersArr"
+        :key="index"
+        @click="visibility = item"
+        :class="{selected : visibility === item}"
+      >
+        {{item}}
+      </span>
+      <!-- <span
         @click="visibility = 'all'"
         :class="{selected : visibility === 'all'}"
       >All</span>
@@ -50,13 +40,15 @@
       <span
         @click="visibility = 'completed'"
         :class="{selected : visibility === 'completed'}"
-      >Completed</span>
+      >Completed</span> -->
     </p>
   </div>
 </template>
 
 <script>
 import { computed, reactive, toRefs, watchEffect } from 'vue'
+import TodoItem from './TodoItem.vue'
+// import EditTodo from './EditTodo.vue'
 const filters = {
   all(todos) {
     return todos
@@ -82,13 +74,16 @@ const todoStorage = {
   }
 }
 export default {
+  components: { TodoItem },
+  // components: { EditTodo },
   setup() {
     const state = reactive({
       newTodo: '',
       todos: todoStorage.fetch(),
       beforeEditCache: '', // 缓存编辑前的title
       editedTodo: null, //正在编辑的todo
-      visibility: 'all',
+      visibility: 'all', //当前item
+      filtersArr: ['all', 'active', 'completed'],
       filterTodos: computed(() => {
         return filters[state.visibility](state.todos)
       })
@@ -105,22 +100,6 @@ export default {
     function removeTodo(todo) {
       state.todos.splice(state.todos.indexOf(todo), 1)
     }
-    // 双击后赋值
-    function editTodo(todo) {
-
-      state.beforeEditCache = todo.title
-      state.editedTodo = todo
-      console.log(todo === state.editedTodo);
-    }
-    // 使用esc后,取消修改
-    function cancelEdit(todo) {
-      todo.title = state.beforeEditCache
-      state.editedTodo = null
-    }
-    // 用户回车或失去焦点(完成)
-    function doneEdit(todo) {
-      state.editedTodo = null
-    }
     watchEffect(() => {
       todoStorage.save(state.todos)
     })
@@ -129,20 +108,9 @@ export default {
       ...toRefs(state),
       addTodo,
       removeTodo,
-      editTodo,
-      cancelEdit,
-      doneEdit
     }
   },
-  // 自定义指令
-  directives: {
-    "todo-focus": (el, { value }) => {
-      if (value) {
-        // 聚焦
-        el.focus()
-      }
-    }
-  }
+
 }
 </script>
 
@@ -150,6 +118,9 @@ export default {
 .completed label {
   text-decoration: line-through;
 }
+/* edit:none,view:block默认class
+当双击是显示editing;
+view:none; edit:block */
 .edit,
 .editing .view {
   display: none;
