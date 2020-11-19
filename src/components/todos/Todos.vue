@@ -17,100 +17,61 @@
         v-model:edited-todo="editedTodo"
         @removeTodo="removeTodo"
       >
-
     </ul>
     <!-- 过滤 -->
-    <p class="filters">
-      <span
-        v-for="(item, index) in filtersArr"
-        :key="index"
-        @click="visibility = item"
-        :class="{selected : visibility === item}"
-      >
-        {{item}}
-      </span>
-      <!-- <span
-        @click="visibility = 'all'"
-        :class="{selected : visibility === 'all'}"
-      >All</span>
-      <span
-        @click="visibility = 'active'"
-        :class="{selected : visibility === 'active'}"
-      >Active</span>
-      <span
-        @click="visibility = 'completed'"
-        :class="{selected : visibility === 'completed'}"
-      >Completed</span> -->
-    </p>
+    <Filters
+      v-model:visibility="visibility"
+      :filtersArr="filtersArr"
+    />
+    <!-- 回退到看板 -->
+    <button @click="backToDash">dashbaoard</button>
   </div>
 </template>
-
 <script>
-import { computed, reactive, toRefs, watchEffect } from 'vue'
+import { reactive, toRefs, watch, } from 'vue'
 import TodoItem from './TodoItem.vue'
-// import EditTodo from './EditTodo.vue'
-const filters = {
-  all(todos) {
-    return todos
-  },
-  active(todos) {
-    return todos.filter(todo => !todo.completed)
-  },
-  completed(todos) {
-    return todos.filter(todo => todo.completed)
-  }
-}
-// 缓存操作
-const todoStorage = {
-  fetch() {
-    let todos = JSON.parse(localStorage.getItem('vue3-todos') || '[]')
-    todos.forEach((todo, index) => {
-      todo.id = index + 1
-    });
-    return todos
-  },
-  save(todos) {
-    localStorage.setItem('vue3-todos', JSON.stringify(todos))
-  }
-}
+import Filters from './Filters.vue'
+import { useTodos } from './useTodos'
+import { useFiltr } from './usefilter'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 export default {
-  components: { TodoItem },
+  components: { TodoItem, Filters },
   // components: { EditTodo },
   setup() {
-    const state = reactive({
+    const todoState = reactive({
       newTodo: '',
-      todos: todoStorage.fetch(),
-      beforeEditCache: '', // 缓存编辑前的title
-      editedTodo: null, //正在编辑的todo
-      visibility: 'all', //当前item
-      filtersArr: ['all', 'active', 'completed'],
-      filterTodos: computed(() => {
-        return filters[state.visibility](state.todos)
-      })
-    });
-    function addTodo() {
-      state.todos.push({
-        id: state.todos.length + 1,
-        title: state.newTodo,
-        completed: false
-      })
-      state.newTodo = ''
-    }
-    // 删除
-    function removeTodo(todo) {
-      state.todos.splice(state.todos.indexOf(todo), 1)
-    }
-    watchEffect(() => {
-      todoStorage.save(state.todos)
+      editedTodo: null //正在编辑的todo
     })
+    const { todos, addTodo, removeTodo } = useTodos(todoState)
+    const filterState = useFiltr(todos);
 
+    //获取路由器实例并使用
+    const router = useRouter()
+    // route是响应式对象,可以监听
+    const route = useRoute()
+    watch(() => route.query, query => {
+      console.log(query);
+    })
+    function backToDash() {
+      router.push('/')
+    }
+    // 守卫
+    onBeforeRouteLeave((to, from) => {
+      const answer = window.confirm('你确定离开当前页面吗?')
+      console.log(answer);
+      if (!answer) {
+        // 默认跳转;返回false,就不跳转;
+        return false
+      }
+    })
     return {
-      ...toRefs(state),
+      ...toRefs(filterState),
+      ...toRefs(todoState),
       addTodo,
       removeTodo,
+      backToDash
     }
   },
-
 }
 </script>
 

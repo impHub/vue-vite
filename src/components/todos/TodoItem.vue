@@ -40,7 +40,7 @@ export default {
     });
     // 删除
     function removeTodo(todo) {
-      emit('remove-todo', todo)
+      emit('removeTodo', todo)
     }
     // 1.双击后赋值
     function editTodo(todo) {
